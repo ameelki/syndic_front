@@ -60,6 +60,9 @@ export class AgencyStore {
     try { return localStorage.getItem(KEY); } catch { return null; }
   }
 
+  /** Retient l'agence du compte connecté pour les prochaines visites (même navigateur). */
+  remember(slug: string): void { try { localStorage.setItem(KEY, slug); } catch {} }
+
   /** Charge l'agence puis applique son thème (appelé au démarrage de l'application). */
   load(): Promise<void> {
     const slug = this.requested();

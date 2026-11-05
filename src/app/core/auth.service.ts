@@ -26,9 +26,11 @@ export class AuthService {
   }
 
   login(email: string, password: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.api}/auth/login`, { email, password, agencySlug: this.agency.slug }).pipe(tap((r) => {
+    return this.http.post<AuthResponse>(`${this.api}/auth/login`, { email, password }).pipe(tap((r) => {
       try { localStorage.setItem(TOKEN, r.token); localStorage.setItem(USER, JSON.stringify(r.user)); } catch {}
       this.user.set(r.user);
+      // le site prend les couleurs de l'agence du compte, quel que soit le lien utilisé pour se connecter
+      if (r.agency) { this.agency.apply(r.agency); this.agency.remember(r.agency.slug); }
     }));
   }
 

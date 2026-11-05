@@ -5,7 +5,8 @@ export interface User {
   id: number; firstName: string; lastName: string; email: string; phone?: string; requestedLot?: string;
   role: Role; status: UserStatus; createdAt?: string; approvedAt?: string; agencyId?: number | null;
 }
-export interface AuthResponse { token: string; user: User; }
+export interface AuthResponse {
+  agency?: AgencyPublic | null; token: string; user: User; }
 export interface Building { id?: number; name: string; address?: string; postalCode?: string; city?: string; notes?: string; }
 export interface BuildingSummary { id: number; name: string; address?: string; city?: string; lots: number; totalTantiemes: number; owners: number; unpaidTotal: number; openIncidents: number; }
 export interface Lot { id?: number; buildingId?: number | null; number: string; building?: string; floor?: number | null; type: string; surface?: number | null; tantiemes: number; ownerId?: number | null; }
