@@ -5,14 +5,16 @@ import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { errorText } from '../../core/auth.interceptor';
+import { LogoComponent } from '../../shared/icons.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, LogoComponent],
   template: `
     <div class="wrap">
       <form class="card box" (ngSubmit)="submit()" #f="ngForm">
+        <app-logo [size]="34" class="lg" />
         <h1>Connexion</h1>
         <p class="sub">Accédez à votre espace syndic ou copropriétaire.</p>
         <div class="alert alert--error" *ngIf="error">{{ error }}</div>
@@ -24,8 +26,8 @@ import { errorText } from '../../core/auth.interceptor';
     </div>
   `,
   styles: [`
-    .wrap { min-height: 70vh; display: grid; place-items: center; padding: 32px 16px; } .box { width: 100%; max-width: 420px; padding: 28px; }
-    h1 { font-size: 26px; } .sub { color: var(--muted); margin: 6px 0 20px; font-size: 14px; } .alt { text-align: center; font-size: 14px; margin: 18px 0 0; }
+    .wrap { min-height: 70vh; display: grid; place-items: center; padding: 32px 16px; } .box { width: 100%; max-width: 420px; padding: 32px 28px; } .lg { color: var(--navy); margin-bottom: 14px; }
+    h1 { font-size: 28px; } .sub { color: var(--muted); margin: 6px 0 20px; font-size: 14px; } .alt { text-align: center; font-size: 14px; margin: 18px 0 0; }
   `],
 })
 export class LoginPage {
