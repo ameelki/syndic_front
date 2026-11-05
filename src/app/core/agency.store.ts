@@ -43,8 +43,11 @@ export class AgencyStore {
 
   constructor(private http: HttpClient) {}
 
-  /** Identifiant à envoyer à l'API (connexion, inscription) ; null = agence par défaut. */
-  get slug(): string | null { return this.agency().slug || null; }
+  /** Vrai quand l'agence vient du lien (?agence=, sous-domaine) ou du dernier lien utilisé, pas de l'agence par défaut. */
+  registrable = signal(false);
+
+  /** Identifiant de l'agence du lien ; null = aucune agence désignée (inscription impossible). */
+  get slug(): string | null { return this.registrable() ? (this.agency().slug || null) : null; }
 
   private requested(): string | null {
     try {
@@ -73,7 +76,7 @@ export class AgencyStore {
         try { localStorage.removeItem(KEY); } catch {}
         return get(null); // identifiant inconnu : on retombe sur l'agence par défaut
       })
-      .then((a) => this.apply(a))
+      .then((a) => { this.apply(a); this.registrable.set(!!slug && a.slug === slug); })
       .catch(() => this.apply(DEFAULT_BRAND));
   }
 

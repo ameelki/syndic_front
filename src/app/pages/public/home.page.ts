@@ -16,7 +16,7 @@ import { AgencyStore } from '../../core/agency.store';
           <p *ngIf="agency.agency().tagline as tagline; else lead">{{ tagline }}</p>
           <ng-template #lead><p>Appels de fonds, dépenses, incidents, assemblées générales et votes en ligne : le syndic et les copropriétaires partagent les mêmes informations, en temps réel.</p></ng-template>
           <div class="cta">
-            <a routerLink="/inscription" class="btn btn--gold">Je suis copropriétaire — créer mon compte</a>
+            <a *ngIf="agency.registrable()" routerLink="/inscription" class="btn btn--gold">Je suis copropriétaire — créer mon compte</a>
             <a routerLink="/connexion" class="btn btn--ghost light">Se connecter</a>
           </div>
         </div>
@@ -40,7 +40,7 @@ import { AgencyStore } from '../../core/agency.store';
         <div class="steps">
           <div class="step" *ngFor="let s of steps; let i = index"><b>{{ i + 1 }}</b><h3>{{ s.title }}</h3><p>{{ s.text }}</p></div>
         </div>
-        <a routerLink="/inscription" class="btn">Commencer maintenant</a>
+        <a *ngIf="agency.registrable()" routerLink="/inscription" class="btn">Commencer maintenant</a>
       </div>
     </section>
   `,

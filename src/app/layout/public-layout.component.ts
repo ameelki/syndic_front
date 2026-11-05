@@ -21,7 +21,7 @@ import { AgencyStore } from '../core/agency.store';
         <app-lang />
         <ng-container *ngIf="!auth.isLoggedIn; else loggedIn">
           <a routerLink="/connexion" class="btn btn--ghost btn--sm">Connexion</a>
-          <a routerLink="/inscription" class="btn btn--gold btn--sm">Créer un compte</a>
+          <a *ngIf="agency.registrable()" routerLink="/inscription" class="btn btn--gold btn--sm">Créer un compte</a>
         </ng-container>
         <ng-template #loggedIn><a [routerLink]="auth.homeUrl()" class="btn btn--gold btn--sm">Mon espace</a></ng-template>
       </nav>
