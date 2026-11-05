@@ -6,23 +6,25 @@ import { Subscription } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 import { BuildingStore } from '../core/building.store';
 import { LangSwitchComponent } from './lang-switch.component';
+import { IconComponent } from '../shared/icons.component';
+import { BrandComponent } from '../shared/brand.component';
 
 interface NavItem { label: string; link: string; icon: string; }
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, RouterOutlet, LangSwitchComponent],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, RouterOutlet, LangSwitchComponent, IconComponent, BrandComponent],
   template: `
     <div class="shell">
       <header class="topbar">
-        <button class="burger" (click)="open = !open" aria-label="Menu">☰</button>
-        <strong class="brand">Syndic<span>.</span></strong>
+        <button class="burger" (click)="open = !open" aria-label="Menu"><app-icon name="menu" [size]="24" /></button>
+        <strong class="brand"><app-brand [size]="22" /></strong>
         <span class="who">{{ auth.user()?.firstName }} {{ auth.user()?.lastName }}</span>
       </header>
       <div class="overlay" *ngIf="open" (click)="open = false"></div>
       <aside class="side" [class.side--open]="open">
-        <div class="side__brand">Syndic<span>.</span><small>{{ auth.isAdmin() ? 'Espace syndic' : 'Espace copropriétaire' }}</small></div>
+        <div class="side__brand"><span class="mark"><app-brand [size]="26" /></span><small>{{ auth.isSuper() ? 'Plateforme' : auth.isAdmin() ? 'Espace syndic' : 'Espace copropriétaire' }}</small></div>
         <div class="bsel" *ngIf="auth.isAdmin() && store.list.length">
           <label>Bâtiment</label>
           <select [ngModel]="store.selectedId" (ngModelChange)="pick($event)" name="bsel">
@@ -31,44 +33,50 @@ interface NavItem { label: string; link: string; icon: string; }
           </select>
         </div>
         <nav>
-          <a *ngFor="let n of nav" [routerLink]="n.link" routerLinkActive="on" (click)="open = false"><i>{{ n.icon }}</i>{{ n.label }}</a>
+          <a *ngFor="let n of nav" [routerLink]="n.link" routerLinkActive="on" (click)="open = false"><app-icon [name]="n.icon" [size]="19" />{{ n.label }}</a>
         </nav>
         <div class="langbox"><app-lang [dark]="true" /></div>
-        <button class="logout" (click)="auth.logout()">⎋ Se déconnecter</button>
+        <button class="logout" (click)="auth.logout()"><app-icon name="logout" [size]="18" />Se déconnecter</button>
       </aside>
       <main class="content"><router-outlet *ngIf="show" /></main>
-      <nav class="tabbar" *ngIf="!auth.isAdmin()">
-        <a *ngFor="let t of tabs" [routerLink]="t.link" routerLinkActive="on"><i>{{ t.icon }}</i><span>{{ t.label }}</span></a>
+      <nav class="tabbar" *ngIf="auth.user()?.role === 'OWNER'">
+        <a *ngFor="let t of tabs" [routerLink]="t.link" routerLinkActive="on"><app-icon [name]="t.icon" [size]="22" /><span>{{ t.label }}</span></a>
       </nav>
     </div>
   `,
   styles: [`
     .shell { min-height: 100vh; }
-    .topbar { display: none; position: sticky; top: 0; z-index: 60; background: var(--navy); color: #fff; align-items: center; gap: 12px; padding: 12px 16px; }
-    .burger { background: none; border: 0; color: #fff; font-size: 24px; line-height: 1; padding: 0 4px; }
-    .brand { font-family: 'Merriweather', serif; font-size: 18px; flex: 1; } .brand span, .side__brand span { color: var(--gold); }
-    .who { font-size: 13px; opacity: .85; }
-    .side { position: fixed; top: 0; bottom: 0; left: 0; width: 256px; background: var(--navy); color: #cfd8e6; display: flex; flex-direction: column; padding: 22px 14px; z-index: 80; overflow-y: auto; }
-    .side__brand { font-family: 'Merriweather', serif; color: #fff; font-size: 24px; padding: 0 10px 22px; display: flex; flex-direction: column; }
-    .side__brand small { font-family: 'Inter', sans-serif; font-size: 12px; color: #8fa3bf; margin-top: 2px; }
-    nav { display: flex; flex-direction: column; gap: 3px; flex: 1; }
-    nav a { color: #cfd8e6; padding: 10px 12px; border-radius: 10px; display: flex; gap: 12px; align-items: center; font-weight: 500; font-size: 14px; }
-    nav a i { font-style: normal; width: 22px; text-align: center; }
-    nav a:hover { background: rgba(255,255,255,.08); } nav a.on { background: rgba(200,150,62,.2); color: #fff; box-shadow: inset 3px 0 0 var(--gold); }
-    .bsel { padding: 0 10px 14px; } .bsel label { display: block; font-size: 11px; color: #8fa3bf; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
-    .bsel select { width: 100%; padding: 8px; border-radius: 8px; border: 0; background: rgba(255,255,255,.12); color: #fff; font-size: 14px; } .bsel option { color: #1c2733; }
+    .topbar { display: none; position: sticky; top: 0; z-index: 60; background: var(--navy); color: #fff; align-items: center; gap: 12px; padding: 11px 14px; }
+    .burger { background: none; border: 0; color: #fff; line-height: 1; padding: 2px; display: inline-flex; }
+    .brand { font-family: var(--font-display); font-size: 19px; flex: 1; display: inline-flex; align-items: center; min-width: 0; letter-spacing: -.01em; }
+    .who { font-size: 13px; opacity: .8; }
+    .side { position: fixed; top: 0; bottom: 0; left: 0; width: 252px; background: var(--navy); color: #c3ced3; display: flex; flex-direction: column; padding: 22px 12px; z-index: 80; overflow-y: auto; }
+    .side__brand { color: #fff; padding: 0 10px 22px; display: flex; flex-direction: column; gap: 4px; }
+    .mark { font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -.02em; display: inline-flex; align-items: center; min-width: 0; }
+    .side__brand small { font-size: 13px; color: #8fa0a8; padding-left: 36px; }
+    nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    nav a { color: #c3ced3; padding: 9px 12px; border-radius: 8px; display: flex; gap: 12px; align-items: center; font-weight: 500; font-size: 14px; position: relative; text-decoration: none; }
+    nav a:hover { background: rgba(255,255,255,.07); color: #fff; }
+    nav a.on { background: rgba(255,255,255,.1); color: #fff; font-weight: 600; }
+    nav a.on app-icon { color: var(--gold); }
+    nav a.on::before { content: ''; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 4px; border-radius: 0 4px 4px 0; background: var(--gold); }
+    .bsel { padding: 0 10px 16px; } .bsel label { display: block; font-size: 13px; color: #8fa0a8; margin-bottom: 5px; }
+    .bsel select { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.08); color: #fff; font-size: 14px; } .bsel option { color: #1a2328; }
     .langbox { margin-top: 14px; }
-    .logout { margin-top: 14px; background: rgba(255,255,255,.08); border: 0; color: #fff; padding: 10px 12px; border-radius: 10px; text-align: left; font-size: 14px; }
-    .content { margin-left: 256px; padding: 28px 32px 48px; max-width: 1200px; }
-    .overlay { position: fixed; inset: 0; background: rgba(15,28,46,.5); z-index: 70; }
+    .logout { margin-top: 12px; background: transparent; border: 1px solid rgba(255,255,255,.16); color: #e4eaec; padding: 9px 12px; border-radius: 8px; text-align: left; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+    .logout:hover { background: rgba(255,255,255,.08); }
+    .content { margin-left: 252px; padding: 30px 36px 56px; max-width: 1220px; }
+    .overlay { position: fixed; inset: 0; background: rgba(20,29,35,.55); z-index: 70; }
     .tabbar { display: none; }
     @media (max-width: 900px) {
       .tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; background: #fff; border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
-      .tabbar a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px; font-size: 11px; color: var(--muted); }
-      .tabbar a i { font-style: normal; font-size: 20px; } .tabbar a.on { color: var(--navy); font-weight: 600; }
+      .tabbar a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 2px 8px; font-size: 11px; color: var(--muted); position: relative; text-decoration: none; }
+      .tabbar a.on { color: var(--navy); font-weight: 700; }
+      .tabbar a.on::before { content: ''; position: absolute; top: 0; left: 28%; right: 28%; height: 3px; border-radius: 0 0 3px 3px; background: var(--gold); }
       .content { padding-bottom: 84px !important; }
       .topbar { display: flex; } .content { margin-left: 0; padding: 18px 14px 40px; }
       .side { transform: translateX(-100%); transition: transform .25s ease; } .side--open { transform: none; box-shadow: 0 0 40px rgba(0,0,0,.35); }
+      nav a.on::before { left: 0; }
     }
   `],
 })
@@ -89,11 +97,11 @@ export class ShellComponent implements OnDestroy {
   pick(id: number | null): void { this.open = false; this.store.select(id); }
 
   tabs: NavItem[] = [
-    { label: 'Accueil', link: '/app/mon-espace', icon: '🏠' },
-    { label: 'Charges', link: '/app/mes-charges', icon: '💶' },
-    { label: 'Incidents', link: '/app/mes-incidents', icon: '⚠️' },
-    { label: 'Votes', link: '/app/assemblies', icon: '🗳' },
-    { label: 'Messages', link: '/app/messages', icon: '✉️' },
+    { label: 'Accueil', link: '/app/mon-espace', icon: 'home' },
+    { label: 'Charges', link: '/app/mes-charges', icon: 'euro' },
+    { label: 'Incidents', link: '/app/mes-incidents', icon: 'alert' },
+    { label: 'Votes', link: '/app/assemblies', icon: 'vote' },
+    { label: 'Messages', link: '/app/messages', icon: 'mail' },
   ];
 
   /** Tableau construit une seule fois : un getter qui recrée les objets à chaque cycle fait boucler ngFor + routerLinkActive. */
@@ -101,31 +109,35 @@ export class ShellComponent implements OnDestroy {
 
   private buildNav(): NavItem[] {
     const common: NavItem[] = [
-      { label: 'Assemblées & votes', link: '/app/assemblies', icon: '🗳' },
-      { label: 'Annonces', link: '/app/announcements', icon: '📢' },
-      { label: 'Documents', link: '/app/documents', icon: '📄' },
-      { label: 'Travaux', link: '/app/works', icon: '🛠' },
-      { label: 'Réservations', link: '/app/reservations', icon: '📅' },
-      { label: 'Messagerie', link: '/app/messages', icon: '✉️' },
+      { label: 'Assemblées & votes', link: '/app/assemblies', icon: 'vote' },
+      { label: 'Annonces', link: '/app/announcements', icon: 'megaphone' },
+      { label: 'Documents', link: '/app/documents', icon: 'doc' },
+      { label: 'Travaux', link: '/app/works', icon: 'tools' },
+      { label: 'Réservations', link: '/app/reservations', icon: 'calendar' },
+      { label: 'Messagerie', link: '/app/messages', icon: 'mail' },
     ];
+    if (this.auth.isSuper()) {
+      return [{ label: 'Agences', link: '/app/super/agencies', icon: 'building' }];
+    }
     if (this.auth.isAdmin()) {
       return [
-        { label: 'Tableau de bord', link: '/app/admin/dashboard', icon: '📊' },
-        { label: 'Copropriétaires', link: '/app/admin/users', icon: '👥' },
-        { label: 'Bâtiments', link: '/app/admin/buildings', icon: '🏙' },
-        { label: 'Lots & tantièmes', link: '/app/admin/lots', icon: '🏢' },
-        { label: 'Appels de fonds', link: '/app/admin/charges', icon: '💶' },
-        { label: 'Dépenses', link: '/app/admin/expenses', icon: '🧾' },
-        { label: 'Incidents', link: '/app/admin/incidents', icon: '⚠️' },
-        { label: 'Budget', link: '/app/admin/budgets', icon: '📈' },
-        { label: 'Fournisseurs', link: '/app/admin/suppliers', icon: '🔧' },
+        { label: 'Tableau de bord', link: '/app/admin/dashboard', icon: 'chart' },
+        { label: 'Copropriétaires', link: '/app/admin/users', icon: 'users' },
+        { label: 'Bâtiments', link: '/app/admin/buildings', icon: 'building' },
+        { label: 'Lots & tantièmes', link: '/app/admin/lots', icon: 'lots' },
+        { label: 'Appels de fonds', link: '/app/admin/charges', icon: 'euro' },
+        { label: 'Dépenses', link: '/app/admin/expenses', icon: 'receipt' },
+        { label: 'Incidents', link: '/app/admin/incidents', icon: 'alert' },
+        { label: 'Budget', link: '/app/admin/budgets', icon: 'trend' },
+        { label: 'Fournisseurs', link: '/app/admin/suppliers', icon: 'wrench' },
         ...common,
+        { label: 'Mon agence', link: '/app/admin/agency', icon: 'palette' },
       ];
     }
     return [
-      { label: 'Mon espace', link: '/app/mon-espace', icon: '🏠' },
-      { label: 'Mes charges', link: '/app/mes-charges', icon: '💶' },
-      { label: 'Mes incidents', link: '/app/mes-incidents', icon: '⚠️' },
+      { label: 'Mon espace', link: '/app/mon-espace', icon: 'home' },
+      { label: 'Mes charges', link: '/app/mes-charges', icon: 'euro' },
+      { label: 'Mes incidents', link: '/app/mes-incidents', icon: 'alert' },
       ...common,
     ];
   }

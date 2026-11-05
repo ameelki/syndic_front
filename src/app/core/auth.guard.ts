@@ -8,11 +8,15 @@ export const authGuard: CanActivateFn = () => {
 };
 export const adminGuard: CanActivateFn = () => {
   const a = inject(AuthService);
-  return a.isAdmin() ? true : inject(Router).createUrlTree([a.isLoggedIn ? '/app/mon-espace' : '/connexion']);
+  return a.isAdmin() ? true : inject(Router).createUrlTree([a.isLoggedIn ? a.homeUrl() : '/connexion']);
 };
 export const ownerGuard: CanActivateFn = () => {
   const a = inject(AuthService);
-  return a.isLoggedIn && !a.isAdmin() ? true : inject(Router).createUrlTree([a.isLoggedIn ? '/app/admin/dashboard' : '/connexion']);
+  return a.isLoggedIn && !a.isAdmin() && !a.isSuper() ? true : inject(Router).createUrlTree([a.isLoggedIn ? a.homeUrl() : '/connexion']);
+};
+export const superGuard: CanActivateFn = () => {
+  const a = inject(AuthService);
+  return a.isSuper() ? true : inject(Router).createUrlTree([a.isLoggedIn ? a.homeUrl() : '/connexion']);
 };
 export const guestGuard: CanActivateFn = () => {
   const a = inject(AuthService);

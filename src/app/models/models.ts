@@ -1,11 +1,12 @@
-export type Role = 'ADMIN' | 'OWNER';
+export type Role = 'ADMIN' | 'OWNER' | 'SUPER_ADMIN';
 export type UserStatus = 'PENDING' | 'ACTIVE' | 'REJECTED';
 
 export interface User {
   id: number; firstName: string; lastName: string; email: string; phone?: string; requestedLot?: string;
-  role: Role; status: UserStatus; createdAt?: string; approvedAt?: string;
+  role: Role; status: UserStatus; createdAt?: string; approvedAt?: string; agencyId?: number | null;
 }
-export interface AuthResponse { token: string; user: User; }
+export interface AuthResponse {
+  agency?: AgencyPublic | null; token: string; user: User; }
 export interface Building { id?: number; name: string; address?: string; postalCode?: string; city?: string; notes?: string; }
 export interface BuildingSummary { id: number; name: string; address?: string; city?: string; lots: number; totalTantiemes: number; owners: number; unpaidTotal: number; openIncidents: number; }
 export interface Lot { id?: number; buildingId?: number | null; number: string; building?: string; floor?: number | null; type: string; surface?: number | null; tantiemes: number; ownerId?: number | null; }
@@ -53,3 +54,11 @@ export interface ContactMessage {
 export interface Expense {
   id: number; label: string; category: string; supplier?: string; amount: number; expenseDate: string; notes?: string;
 }
+
+/** Marque publique d'une agence (nom, logo, couleurs). */
+export interface AgencyPublic {
+  id: number; slug: string; name: string; tagline: string | null; logoUrl: string | null;
+  primaryColor: string | null; accentColor: string | null;
+}
+/** Ligne de la liste des agences (super administrateur). */
+export interface AgencyRow extends AgencyPublic { active: boolean; buildings: number; owners: number; createdAt?: string; }

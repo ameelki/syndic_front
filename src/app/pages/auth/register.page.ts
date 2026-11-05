@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
+import { AgencyStore } from '../../core/agency.store';
 import { errorText } from '../../core/auth.interceptor';
 
 @Component({
@@ -13,14 +14,19 @@ import { errorText } from '../../core/auth.interceptor';
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="wrap">
-      <div class="card box" *ngIf="done; else formTpl">
+      <div class="card box" *ngIf="!agency.registrable()">
+        <h1>Lien d'inscription requis</h1>
+        <div class="alert alert--warn" style="margin-top:16px">Chaque syndic a son propre lien. Utilisez le lien d'inscription que votre syndic vous a envoyé.</div>
+        <a routerLink="/connexion" class="btn btn--ghost btn--block">Se connecter</a>
+      </div>
+      <div class="card box" *ngIf="agency.registrable() && done; else formTpl">
         <h1>Demande envoyée ✔</h1>
         <div class="alert alert--ok" style="margin-top:16px">{{ done }}</div>
         <p class="sub">Vous pourrez vous connecter dès que le syndic aura validé votre compte.</p>
         <a routerLink="/" class="btn btn--ghost btn--block">Retour à l'accueil</a>
       </div>
       <ng-template #formTpl>
-        <form class="card box" (ngSubmit)="submit()" #f="ngForm">
+        <form *ngIf="agency.registrable()" class="card box" (ngSubmit)="submit()" #f="ngForm">
           <h1>Créer mon compte</h1>
           <p class="sub">Réservé aux copropriétaires. Votre compte sera validé par le syndic.</p>
           <div class="alert alert--error" *ngIf="error">{{ error }}</div>
@@ -60,14 +66,15 @@ export class RegisterPage implements OnInit {
   error = '';
   done = '';
 
-  constructor(private auth: AuthService, private api: ApiService) {}
+  constructor(private auth: AuthService, private api: ApiService, public agency: AgencyStore) {}
 
   ngOnInit(): void {
-    this.api.get<{ id: number; name: string; city: string }[]>('/auth/buildings').subscribe({ next: (b) => (this.buildings = b), error: () => {} });
+    if (!this.agency.slug) return;
+    this.api.get<{ id: number; name: string; city: string }[]>('/auth/buildings', { agency: this.agency.slug }).subscribe({ next: (b) => (this.buildings = b), error: () => {} });
   }
 
   submit(): void {
-    if (this.loading) return;
+    if (this.loading || !this.agency.slug) return;
     this.error = '';
     if (this.form.password !== this.confirm) { this.error = 'Les mots de passe ne correspondent pas.'; return; }
     this.loading = true;

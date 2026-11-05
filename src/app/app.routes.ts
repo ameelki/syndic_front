@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminGuard, authGuard, guestGuard, homeRedirect, ownerGuard } from './core/auth.guard';
+import { adminGuard, authGuard, guestGuard, homeRedirect, ownerGuard, superGuard } from './core/auth.guard';
 import { CONFIGS } from './pages/crud-configs';
 
 export const routes: Routes = [
@@ -27,7 +27,10 @@ export const routes: Routes = [
       { path: 'admin/expenses', canActivate: [adminGuard], data: { crud: CONFIGS['expenses'] }, loadComponent: () => import('./pages/crud.page').then((m) => m.CrudPage) },
       { path: 'admin/incidents', canActivate: [adminGuard], loadComponent: () => import('./pages/admin/admin-incidents.page').then((m) => m.AdminIncidentsPage) },
       { path: 'admin/suppliers', canActivate: [adminGuard], data: { crud: CONFIGS['suppliers'] }, loadComponent: () => import('./pages/crud.page').then((m) => m.CrudPage) },
+      { path: 'admin/agency', canActivate: [adminGuard], loadComponent: () => import('./pages/admin/admin-agency.page').then((m) => m.AdminAgencyPage) },
       { path: 'admin/budgets', canActivate: [adminGuard], data: { crud: CONFIGS['budgets'] }, loadComponent: () => import('./pages/crud.page').then((m) => m.CrudPage) },
+      // ----- Super administrateur -----
+      { path: 'super/agencies', canActivate: [superGuard], loadComponent: () => import('./pages/super/agencies.page').then((m) => m.AgenciesPage) },
       { path: 'reservations', loadComponent: () => import('./pages/reservations.page').then((m) => m.ReservationsPage) },
       { path: 'messages', loadComponent: () => import('./pages/messages.page').then((m) => m.MessagesPage) },
       // ----- Copropriétaire -----
