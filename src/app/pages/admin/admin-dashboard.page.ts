@@ -26,6 +26,17 @@ import { AdminDashboard, BuildingSummary } from '../../models/models';
         <div class="card stat"><small>Dépenses de l'année</small><strong>{{ d.expensesThisYear | currency:'EUR':'symbol':'1.2-2' }}</strong><a routerLink="/app/admin/expenses">Voir les dépenses</a></div>
       </div>
 
+      <div class="grid grid--2" style="margin-top:16px" *ngIf="(d.overdueCount || 0) > 0 || (d.upcomingDeadlines?.length || 0) > 0">
+        <a routerLink="/app/admin/charges" class="card stat stat--alert" *ngIf="(d.overdueCount || 0) > 0">
+          <small>En retard de paiement</small><strong>{{ d.overdueTotal | currency:'EUR':'symbol':'1.2-2' }}</strong><span>{{ d.overdueCount }} charge(s) dont l'échéance est dépassée — relancer</span>
+        </a>
+        <div class="card" *ngIf="(d.upcomingDeadlines?.length || 0) > 0">
+          <h3>Prochaines échéances</h3>
+          <div class="dl" *ngFor="let x of d.upcomingDeadlines"><span>{{ x.title }}</span><span class="badge" [class.badge--danger]="late(x.dueDate)" [class.badge--warn]="!late(x.dueDate)">{{ x.dueDate | date:'dd/MM/yyyy' }}</span></div>
+          <a routerLink="/app/admin/deadlines">Gérer les échéances</a>
+        </div>
+      </div>
+
       <div class="card" style="margin-top:16px" *ngIf="!store.selectedName && summary.length">
         <h3>Bâtiments</h3>
         <div class="table-wrap"><table class="table">
@@ -75,7 +86,7 @@ import { AdminDashboard, BuildingSummary } from '../../models/models';
       </div>
     </ng-container>
   `,
-  styles: [`.block { display: block; color: var(--blue); } h3 { font-size: 17px; margin-bottom: 10px; } .muted { color: var(--muted); } .ann { padding: 8px 0; border-bottom: 1px solid var(--line); } .ann:last-child { border: 0; } .stat a { font-size: 13px; } .bar { height: 10px; background: #e8edf5; border-radius: 6px; overflow: hidden; margin: 8px 0; } .bar div { height: 100%; background: var(--navy); } .bar .over { background: var(--danger); } .warn { color: var(--warn); font-weight: 600; }`],
+  styles: [`.block { display: block; color: var(--blue); } h3 { font-size: 17px; margin-bottom: 10px; } .muted { color: var(--muted); } .ann { padding: 8px 0; border-bottom: 1px solid var(--line); } .ann:last-child { border: 0; } .stat a { font-size: 13px; } .bar { height: 10px; background: #e8edf5; border-radius: 6px; overflow: hidden; margin: 8px 0; } .bar div { height: 100%; background: var(--navy); } .bar .over { background: var(--danger); } .warn { color: var(--warn); font-weight: 600; } .dl { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14px; } a.stat { text-decoration: none; }`],
 })
 export class AdminDashboardPage implements OnInit {
   d: AdminDashboard | null = null;
@@ -84,6 +95,8 @@ export class AdminDashboardPage implements OnInit {
   error = '';
   summary: BuildingSummary[] = [];
   constructor(private api: ApiService, public store: BuildingStore) {}
+
+  late(date: string): boolean { return new Date(date).getTime() < Date.now(); }
   ngOnInit(): void {
     this.api.get<BuildingSummary[]>('/admin/buildings/summary').subscribe({ next: (s) => (this.summary = s), error: () => {} });
     this.api.get<AdminDashboard>('/admin/dashboard').subscribe({ next: (d) => (this.d = d), error: (e) => (this.error = errorText(e, 'Chargement impossible.')) });

@@ -6,11 +6,12 @@ import { ApiService } from '../../core/api.service';
 import { errorText } from '../../core/auth.interceptor';
 import { Incident } from '../../models/models';
 import { badgeClass, INCIDENT_STATUS, opts, PRIORITY } from '../../shared/labels';
+import { PhotosComponent } from '../../shared/photos.component';
 
 @Component({
   selector: 'app-admin-incidents',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe],
+  imports: [CommonModule, FormsModule, DatePipe, PhotosComponent],
   template: `
     <div class="page-head"><div><h1>Incidents</h1><p>Signalements des copropriétaires</p></div></div>
     <div class="tabs">
@@ -28,6 +29,7 @@ import { badgeClass, INCIDENT_STATUS, opts, PRIORITY } from '../../shared/labels
         <p *ngIf="i.description">{{ i.description }}</p>
         <small>📍 {{ i.location || 'Lieu non précisé' }} · par {{ i.reporterName }} · {{ i.createdAt | date:'dd/MM/yyyy HH:mm' }}</small>
         <p class="comment" *ngIf="i.adminComment">💬 {{ i.adminComment }}</p>
+        <app-photos [incidentId]="i.id" [canAdd]="true" />
         <div class="acts"><button class="btn btn--sm" (click)="open(i)">Traiter</button><button class="btn btn--sm btn--danger" (click)="remove(i)">Supprimer</button></div>
       </div>
       <div class="card empty" *ngIf="!visible.length">Aucun incident.</div>

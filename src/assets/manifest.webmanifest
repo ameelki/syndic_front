@@ -1,0 +1,15 @@
+{
+  "name": "Syndic — Gestion de copropriété",
+  "short_name": "Syndic",
+  "description": "Charges, assemblées, signalements et documents de votre copropriété",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f3f5f5",
+  "theme_color": "#1f2b33",
+  "lang": "fr",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

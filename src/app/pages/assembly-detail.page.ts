@@ -6,7 +6,8 @@ import { Observable } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
 import { errorText } from '../core/auth.interceptor';
-import { AssemblyView, PersonWeight, ResolutionView } from '../models/models';
+import { AssemblyView, AttendanceRow, PersonWeight, ResolutionView } from '../models/models';
+import { saveBlob } from '../shared/files';
 import { ASSEMBLY_STATUS, MAJORITY, opts } from '../shared/labels';
 
 @Component({
@@ -27,6 +28,38 @@ import { ASSEMBLY_STATUS, MAJORITY, opts } from '../shared/labels';
       </div>
 
       <div class="card" *ngIf="v.assembly.agenda"><h3>Ordre du jour</h3><p class="pre">{{ v.assembly.agenda }}</p></div>
+
+      <div class="card tools" *ngIf="isAdmin || v.assembly.status === 'CLOSED'">
+        <div class="tools__row">
+          <div *ngIf="isAdmin">
+            <strong>Convocation</strong>
+            <p class="muted" *ngIf="v.assembly.convokedAt">Envoyée le {{ v.assembly.convokedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+            <p class="muted" *ngIf="!v.assembly.convokedAt">Pas encore envoyée aux copropriétaires.</p>
+          </div>
+          <div class="tools__btns">
+            <button class="btn btn--sm" *ngIf="isAdmin" (click)="convoke()" [disabled]="busy">{{ v.assembly.convokedAt ? 'Renvoyer la convocation' : 'Envoyer la convocation' }}</button>
+            <button class="btn btn--sm btn--ghost" (click)="downloadMinutes()" [disabled]="busy">Procès-verbal (PDF)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" *ngIf="isAdmin">
+        <div class="tools__row"><h3>Feuille de présence</h3>
+          <button class="btn btn--sm btn--ghost" (click)="toggleAttendance()">{{ showAtt ? 'Masquer' : 'Afficher' }} ({{ presentCount }}/{{ attendance.length }} présents)</button></div>
+        <div class="table-wrap" *ngIf="showAtt" style="margin-top:10px">
+          <table class="table">
+            <thead><tr><th>Copropriétaire</th><th>Lots</th><th>Tantièmes</th><th>Procuration</th><th>Présent</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let r of attendance">
+                <td data-label="Copropriétaire">{{ r.name }}</td><td data-label="Lots">{{ r.lots }}</td><td data-label="Tantièmes">{{ r.ownWeight }}</td>
+                <td data-label="Procuration">{{ r.proxyTo ? 'Donnée à ' + r.proxyTo : r.proxiesReceived ? 'Reçoit ' + r.proxiesReceived : '—' }}</td>
+                <td data-label="Présent"><input type="checkbox" [checked]="r.present" (change)="setPresent(r, $any($event.target).checked)" /></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="card empty" *ngIf="!attendance.length">Aucun copropriétaire concerné.</div>
+        </div>
+      </div>
 
       <div class="card stats">
         <div>
@@ -137,6 +170,8 @@ import { ASSEMBLY_STATUS, MAJORITY, opts } from '../shared/labels';
     </div>
   `,
   styles: [`
+    .tools__row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; } .tools__row p { margin: 2px 0 0; font-size: 13px; }
+    .tools__btns { display: flex; gap: 8px; flex-wrap: wrap; } .tools { margin: 14px 0; } .card + .card { margin-top: 14px; }
     .back { display: inline-block; margin-bottom: 12px; font-size: 14px; } h3 { font-size: 17px; margin-bottom: 8px; } .pre { white-space: pre-wrap; margin: 0; }
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin: 14px 0; }
     .stats small { display: block; color: var(--muted); } .stats strong { display: block; font-size: 24px; color: var(--navy); } .stats span { font-size: 13px; color: var(--muted); }
@@ -166,6 +201,8 @@ export class AssemblyDetailPage implements OnInit {
   busy = false;
   form = { title: '', description: '', majority: 'SIMPLE' };
   id = 0;
+  attendance: AttendanceRow[] = [];
+  showAtt = false;
 
   constructor(private route: ActivatedRoute, private api: ApiService, private auth: AuthService) {}
 
@@ -177,6 +214,37 @@ export class AssemblyDetailPage implements OnInit {
   choiceLabel(c: string): string { return c === 'FOR' ? 'Pour' : c === 'AGAINST' ? 'Contre' : 'Abstention'; }
 
   ngOnInit(): void { this.id = Number(this.route.snapshot.paramMap.get('id')); this.load(); }
+
+  get presentCount(): number { return this.attendance.filter((r) => r.present).length; }
+
+  toggleAttendance(): void { this.showAtt = !this.showAtt; if (this.showAtt && !this.attendance.length) this.loadAttendance(); }
+
+  private loadAttendance(): void {
+    this.api.get<AttendanceRow[]>(`/admin/assemblies/${this.id}/attendance`).subscribe({ next: (r) => (this.attendance = r), error: (e) => (this.error = errorText(e)) });
+  }
+
+  setPresent(r: AttendanceRow, present: boolean): void {
+    this.api.put<AttendanceRow[]>(`/admin/assemblies/${this.id}/attendance/${r.ownerId}?present=${present}`, null).subscribe({
+      next: (rows) => (this.attendance = rows), error: (e) => { this.error = errorText(e); this.loadAttendance(); },
+    });
+  }
+
+  convoke(): void {
+    if (!confirm('Envoyer la convocation (notification + email) à tous les copropriétaires concernés ?')) return;
+    this.busy = true;
+    this.api.post<{ sent: number }>(`/admin/assemblies/${this.id}/convoke`).subscribe({
+      next: (r) => { this.busy = false; this.flash(`Convocation envoyée à ${r.sent} copropriétaire(s).`); this.load(); },
+      error: (e) => { this.busy = false; this.error = errorText(e); },
+    });
+  }
+
+  downloadMinutes(): void {
+    this.busy = true;
+    this.api.getBlob(`/assemblies/${this.id}/minutes`).subscribe({
+      next: (b) => { this.busy = false; saveBlob(b, `proces-verbal-${this.id}.pdf`); },
+      error: (e) => { this.busy = false; this.error = errorText(e, 'Procès-verbal indisponible.'); },
+    });
+  }
 
   load(): void {
     this.api.get<AssemblyView>(`/assemblies/${this.id}/view`).subscribe({

@@ -14,12 +14,13 @@ export interface ChargeCall { id: number; buildingId?: number | null; title: str
 export interface ChargeView {
   id: number; callId: number; callTitle: string; dueDate: string; lotId: number; lotNumber: string;
   ownerId: number; ownerName: string; amount: number; status: 'UNPAID' | 'PAID'; paidAt?: string;
+  late?: boolean; reminders?: number; lastReminderAt?: string;
 }
 export interface Incident {
   id: number; buildingId?: number | null; title: string; description?: string; location?: string; status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
   priority: 'LOW' | 'MEDIUM' | 'HIGH'; reporterName?: string; adminComment?: string; createdAt: string; resolvedAt?: string;
 }
-export interface Assembly { id: number; quorumPercent?: number; votingDeadline?: string | null; title: string; meetingDate: string; location?: string; agenda?: string; status: 'PLANNED' | 'OPEN' | 'CLOSED'; }
+export interface Assembly { id: number; quorumPercent?: number; votingDeadline?: string | null; title: string; meetingDate: string; location?: string; agenda?: string; status: 'PLANNED' | 'OPEN' | 'CLOSED'; convokedAt?: string | null; chairman?: string; minutesNote?: string; }
 export type Majority = 'SIMPLE' | 'ABSOLUTE' | 'TWO_THIRDS' | 'UNANIMITY';
 export interface VoterView { ownerId: number; name: string; weight: number; choice: 'FOR' | 'AGAINST' | 'ABSTAIN'; }
 export interface ResolutionView {
@@ -37,6 +38,7 @@ export interface AdminDashboard {
   pendingUsers: number; activeOwners: number; lots: number; totalTantiemes: number; unpaidTotal: number; unpaidCount: number;
   openIncidents: number; expensesThisYear: number; budgetThisYear: number | null; highPriorityIncidents: number;
   recentExpenses: Expense[]; nextAssembly: Assembly | null; announcements: Announcement[];
+  overdueTotal?: number; overdueCount?: number; upcomingDeadlines?: Deadline[];
 }
 export interface OwnerDashboard {
   firstName: string; dueTotal: number; unpaidCount: number; openIncidents: number; myTantiemes: number; lots: Lot[];
@@ -62,3 +64,10 @@ export interface AgencyPublic {
 }
 /** Ligne de la liste des agences (super administrateur). */
 export interface AgencyRow extends AgencyPublic { active: boolean; buildings: number; owners: number; createdAt?: string; }
+
+export interface AppNotification { id: number; title: string; body?: string; link?: string; createdAt: string; readAt?: string | null; }
+export interface Deadline { id: number; buildingId?: number | null; title: string; category?: string; dueDate: string; recurrenceMonths?: number | null; done?: boolean; notes?: string; }
+export interface ActivityEntry { id: number; actorName?: string; action: string; target?: string; createdAt: string; }
+export interface AttendanceRow { ownerId: number; name: string; lots: string; ownWeight: number; present: boolean; proxyTo?: string | null; proxiesReceived: number; }
+export interface Intervention { id: number; supplierId: number; interventionDate: string; description: string; cost?: number | null; invoiceRef?: string; }
+export interface DocumentItem { id: number; buildingId?: number | null; title: string; category: string; url?: string; notes?: string; fileName?: string; fileType?: string; fileSize?: number; ownersVisible?: boolean; createdAt?: string; }

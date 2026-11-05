@@ -8,23 +8,26 @@ import { BuildingStore } from '../core/building.store';
 import { LangSwitchComponent } from './lang-switch.component';
 import { IconComponent } from '../shared/icons.component';
 import { BrandComponent } from '../shared/brand.component';
+import { BellComponent } from './bell.component';
 
 interface NavItem { label: string; link: string; icon: string; }
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, RouterOutlet, LangSwitchComponent, IconComponent, BrandComponent],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, RouterOutlet, LangSwitchComponent, IconComponent, BrandComponent, BellComponent],
   template: `
     <div class="shell">
       <header class="topbar">
         <button class="burger" (click)="open = !open" aria-label="Menu"><app-icon name="menu" [size]="24" /></button>
         <strong class="brand"><app-brand [size]="22" /></strong>
         <span class="who">{{ auth.user()?.firstName }} {{ auth.user()?.lastName }}</span>
+        <app-bell *ngIf="!auth.isSuper()" />
       </header>
       <div class="overlay" *ngIf="open" (click)="open = false"></div>
       <aside class="side" [class.side--open]="open">
-        <div class="side__brand"><span class="mark"><app-brand [size]="26" /></span><small>{{ auth.isSuper() ? 'Plateforme' : auth.isAdmin() ? 'Espace syndic' : 'Espace copropriétaire' }}</small></div>
+        <div class="side__brand"><span class="mark"><app-brand [size]="26" /></span><small>{{ auth.isSuper() ? 'Plateforme' : auth.isAdmin() ? 'Espace syndic' : 'Espace copropriétaire' }}</small>
+          <span class="side__bell" *ngIf="!auth.isSuper()"><app-bell /></span></div>
         <div class="bsel" *ngIf="auth.isAdmin() && store.list.length">
           <label>Bâtiment</label>
           <select [ngModel]="store.selectedId" (ngModelChange)="pick($event)" name="bsel">
@@ -54,6 +57,8 @@ interface NavItem { label: string; link: string; icon: string; }
     .side__brand { color: #fff; padding: 0 10px 22px; display: flex; flex-direction: column; gap: 4px; }
     .mark { font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -.02em; display: inline-flex; align-items: center; min-width: 0; }
     .side__brand small { font-size: 13px; color: #8fa0a8; padding-left: 36px; }
+    .side__brand { position: relative; } .side__bell { position: absolute; top: -2px; right: 6px; color: #c3ced3; }
+    @media (max-width: 900px) { .side__bell { display: none; } }
     nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
     nav a { color: #c3ced3; padding: 9px 12px; border-radius: 8px; display: flex; gap: 12px; align-items: center; font-weight: 500; font-size: 14px; position: relative; text-decoration: none; }
     nav a:hover { background: rgba(255,255,255,.07); color: #fff; }
@@ -117,7 +122,10 @@ export class ShellComponent implements OnDestroy {
       { label: 'Messagerie', link: '/app/messages', icon: 'mail' },
     ];
     if (this.auth.isSuper()) {
-      return [{ label: 'Agences', link: '/app/super/agencies', icon: 'building' }];
+      return [
+        { label: 'Agences', link: '/app/super/agencies', icon: 'building' },
+        { label: 'Mon compte', link: '/app/profil', icon: 'user' },
+      ];
     }
     if (this.auth.isAdmin()) {
       return [
@@ -130,8 +138,12 @@ export class ShellComponent implements OnDestroy {
         { label: 'Incidents', link: '/app/admin/incidents', icon: 'alert' },
         { label: 'Budget', link: '/app/admin/budgets', icon: 'trend' },
         { label: 'Fournisseurs', link: '/app/admin/suppliers', icon: 'wrench' },
+        { label: 'Échéances', link: '/app/admin/deadlines', icon: 'clock' },
         ...common,
+        { label: 'Équipe', link: '/app/admin/team', icon: 'users' },
+        { label: 'Journal d’activité', link: '/app/admin/activity', icon: 'list' },
         { label: 'Mon agence', link: '/app/admin/agency', icon: 'palette' },
+        { label: 'Mon compte', link: '/app/profil', icon: 'user' },
       ];
     }
     return [
@@ -139,6 +151,7 @@ export class ShellComponent implements OnDestroy {
       { label: 'Mes charges', link: '/app/mes-charges', icon: 'euro' },
       { label: 'Mes incidents', link: '/app/mes-incidents', icon: 'alert' },
       ...common,
+      { label: 'Mon compte', link: '/app/profil', icon: 'user' },
     ];
   }
 }

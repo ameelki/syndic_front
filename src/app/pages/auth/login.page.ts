@@ -21,6 +21,7 @@ import { BrandComponent } from '../../shared/brand.component';
         <div class="field"><label for="e">Email</label><input id="e" name="email" type="email" [(ngModel)]="email" autocomplete="email" required /></div>
         <div class="field"><label for="p">Mot de passe</label><input id="p" name="password" type="password" [(ngModel)]="password" autocomplete="current-password" required /></div>
         <button class="btn btn--block" type="submit" [disabled]="loading || !f.valid">{{ loading ? 'Connexion...' : 'Se connecter' }}</button>
+        <p class="alt"><a routerLink="/mot-de-passe-oublie">Mot de passe oublié ?</a></p>
         <p class="alt">Pas encore de compte ? <a routerLink="/inscription">Créer un compte</a></p>
       </form>
     </div>

@@ -7,6 +7,7 @@ import { BuildingStore } from '../../core/building.store';
 import { errorText } from '../../core/auth.interceptor';
 import { ChargeCall, ChargeView } from '../../models/models';
 import { badgeClass } from '../../shared/labels';
+import { saveBlob } from '../../shared/files';
 
 @Component({
   selector: 'app-admin-charges',
@@ -28,7 +29,9 @@ import { badgeClass } from '../../shared/labels';
       <select [(ngModel)]="status" name="status" (ngModelChange)="loadCharges()">
         <option [ngValue]="''">Tous les statuts</option><option value="UNPAID">Impayés</option><option value="PAID">Payés</option>
       </select>
+      <button class="btn btn--sm btn--ghost" *ngIf="callId" (click)="remindCall()">Relancer les impayés</button>
       <button class="btn btn--sm btn--danger" *ngIf="callId" (click)="deleteCall()">Supprimer cet appel</button>
+      <button class="btn btn--sm btn--ghost" (click)="exportCsv()" [disabled]="!charges.length">Exporter (CSV)</button>
       <strong class="total">Total affiché : {{ total | currency:'EUR':'symbol':'1.2-2' }}</strong>
     </div>
 
@@ -41,8 +44,10 @@ import { badgeClass } from '../../shared/labels';
             <td data-label="Appel">{{ c.callTitle }}</td><td data-label="Échéance">{{ c.dueDate | date:'dd/MM/yyyy' }}</td>
             <td data-label="Lot">{{ c.lotNumber }}</td><td data-label="Copropriétaire">{{ c.ownerName }}</td>
             <td data-label="Montant"><strong>{{ c.amount | currency:'EUR':'symbol':'1.2-2' }}</strong></td>
-            <td data-label="Statut"><span [class]="badge(c.status)">{{ c.status === 'PAID' ? 'Payé le ' + (c.paidAt | date:'dd/MM/yyyy') : 'À payer' }}</span></td>
+            <td data-label="Statut"><span [class]="c.late ? 'badge badge--danger' : badge(c.status)">{{ c.status === 'PAID' ? 'Payé le ' + (c.paidAt | date:'dd/MM/yyyy') : c.late ? 'En retard' : 'À payer' }}</span>
+              <br /><small class="muted" *ngIf="c.reminders">{{ c.reminders }} relance(s)</small></td>
             <td class="actions-cell"><div class="actions">
+              <button class="btn btn--sm btn--ghost" *ngIf="c.status === 'UNPAID'" (click)="remind(c)">Relancer</button>
               <button class="btn btn--sm btn--ok" *ngIf="c.status === 'UNPAID'" (click)="setPaid(c, true)">Marquer payé</button>
               <button class="btn btn--sm btn--ghost" *ngIf="c.status === 'PAID'" (click)="setPaid(c, false)">Annuler le paiement</button>
             </div></td>
@@ -71,7 +76,7 @@ import { badgeClass } from '../../shared/labels';
       </form>
     </div>
   `,
-  styles: [`.total { margin-left: auto; color: var(--navy); } .hint { font-size: 13px; color: var(--muted); }`],
+  styles: [`.muted { color: var(--muted); } .total { margin-left: auto; color: var(--navy); } .hint { font-size: 13px; color: var(--muted); }`],
 })
 export class AdminChargesPage implements OnInit {
   calls: ChargeCall[] = [];
@@ -116,6 +121,25 @@ export class AdminChargesPage implements OnInit {
   setPaid(c: ChargeView, paid: boolean): void {
     this.api.patch<ChargeView>(`/admin/charges/${c.id}/paid`, { paid }).subscribe({
       next: (r) => Object.assign(c, r), error: (e) => (this.error = errorText(e)),
+    });
+  }
+
+  remind(c: ChargeView): void {
+    this.api.post<ChargeView>(`/admin/charges/${c.id}/remind`).subscribe({
+      next: (r) => { Object.assign(c, r); this.flash('Relance envoyée à ' + c.ownerName + '.'); }, error: (e) => (this.error = errorText(e)),
+    });
+  }
+
+  remindCall(): void {
+    if (!this.callId || !confirm('Envoyer un rappel (notification + email) à tous les copropriétaires qui n’ont pas payé cet appel ?')) return;
+    this.api.post<{ sent: number }>(`/admin/charge-calls/${this.callId}/remind`).subscribe({
+      next: (r) => { this.flash(r.sent + ' relance(s) envoyée(s).'); this.loadCharges(); }, error: (e) => (this.error = errorText(e)),
+    });
+  }
+
+  exportCsv(): void {
+    this.api.getBlob('/admin/charges/export', { callId: this.callId, status: this.status }).subscribe({
+      next: (b) => saveBlob(b, 'charges.csv'), error: (e) => (this.error = errorText(e, 'Export impossible.')),
     });
   }
 

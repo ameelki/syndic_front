@@ -7,11 +7,13 @@ import { BuildingStore } from '../../core/building.store';
 import { errorText } from '../../core/auth.interceptor';
 import { Incident } from '../../models/models';
 import { badgeClass, INCIDENT_STATUS, opts, PRIORITY } from '../../shared/labels';
+import { PhotosComponent } from '../../shared/photos.component';
+import { compressImage } from '../../shared/files';
 
 @Component({
   selector: 'app-owner-incidents',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe],
+  imports: [CommonModule, FormsModule, DatePipe, PhotosComponent],
   template: `
     <div class="page-head">
       <div><h1>Mes incidents</h1><p>Signalez un problème dans la copropriété et suivez son traitement</p></div>
@@ -27,6 +29,7 @@ import { badgeClass, INCIDENT_STATUS, opts, PRIORITY } from '../../shared/labels
         <p *ngIf="i.description">{{ i.description }}</p>
         <small>📍 {{ i.location || 'Lieu non précisé' }} · {{ i.createdAt | date:'dd/MM/yyyy' }}</small>
         <p class="comment" *ngIf="i.adminComment">💬 Syndic : {{ i.adminComment }}</p>
+        <app-photos [incidentId]="i.id" [canAdd]="i.status !== 'RESOLVED'" />
       </div>
       <div class="card empty" *ngIf="!items.length">Vous n'avez signalé aucun incident.</div>
     </div>
@@ -43,6 +46,9 @@ import { badgeClass, INCIDENT_STATUS, opts, PRIORITY } from '../../shared/labels
           <div class="field"><label>Lieu</label><input name="l" [(ngModel)]="form.location" maxlength="150" placeholder="Hall, parking, étage 3…" /></div>
           <div class="field"><label>Urgence</label><select name="p" [(ngModel)]="form.priority"><option *ngFor="let o of prioOpts" [value]="o.value">{{ o.label }}</option></select></div>
         </div>
+        <div class="field"><label>Photos (jusqu'à 5)</label>
+          <input name="ph" type="file" accept="image/*" multiple (change)="pickFiles($event)" />
+          <small class="muted" *ngIf="files.length">{{ files.length }} photo(s) sélectionnée(s)</small></div>
         <div class="modal__actions">
           <button type="button" class="btn btn--ghost" (click)="showNew = false">Annuler</button>
           <button type="submit" class="btn" [disabled]="busy || !f.valid">{{ busy ? 'Envoi...' : 'Envoyer' }}</button>
@@ -50,7 +56,7 @@ import { badgeClass, INCIDENT_STATUS, opts, PRIORITY } from '../../shared/labels
       </form>
     </div>
   `,
-  styles: [`.head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; } p { margin: 8px 0; } .comment { background: #f3f5f9; padding: 8px 12px; border-radius: 8px; }`],
+  styles: [`.muted { color: var(--muted); } .head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; } p { margin: 8px 0; } .comment { background: #f3f5f9; padding: 8px 12px; border-radius: 8px; }`],
 })
 export class OwnerIncidentsPage implements OnInit {
   items: Incident[] = [];
@@ -62,6 +68,7 @@ export class OwnerIncidentsPage implements OnInit {
   error = '';
   success = '';
   showNew = false;
+  files: File[] = [];
   form: { title: string; description: string; location: string; priority: string; buildingId: number | null } = { title: '', description: '', location: '', priority: 'MEDIUM', buildingId: null };
 
   constructor(private api: ApiService, public store: BuildingStore) {}
@@ -74,12 +81,24 @@ export class OwnerIncidentsPage implements OnInit {
       .subscribe({ next: (r) => (this.items = r), error: (e) => (this.error = errorText(e)) });
   }
 
+  pickFiles(ev: Event): void { this.files = Array.from((ev.target as HTMLInputElement).files ?? []).slice(0, 5); }
+
+  /** Envoie les photos choisies (réduites) puis recharge la liste. */
+  private async uploadPhotos(id: number): Promise<void> {
+    for (const f of this.files) {
+      const { blob, name } = await compressImage(f);
+      await new Promise<void>((res) => this.api.upload(`/incidents/${id}/photos`, blob, name).subscribe({ next: () => res(), error: () => res() }));
+    }
+    this.files = [];
+    this.load();
+  }
+
   send(): void {
     if (this.busy) return;
     this.busy = true;
     this.error = '';
-    this.api.post('/incidents', this.form).pipe(finalize(() => (this.busy = false))).subscribe({
-      next: () => { this.showNew = false; this.form = { title: '', description: '', location: '', priority: 'MEDIUM', buildingId: null }; this.success = 'Incident signalé. Le syndic a été informé.'; setTimeout(() => (this.success = ''), 3500); this.load(); },
+    this.api.post<Incident>('/incidents', this.form).pipe(finalize(() => (this.busy = false))).subscribe({
+      next: (created) => { if (this.files.length) void this.uploadPhotos(created.id); this.showNew = false; this.form = { title: '', description: '', location: '', priority: 'MEDIUM', buildingId: null }; this.success = 'Incident signalé. Le syndic a été informé.'; setTimeout(() => (this.success = ''), 3500); this.load(); },
       error: (e) => (this.error = errorText(e)),
     });
   }

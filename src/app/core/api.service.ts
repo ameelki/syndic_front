@@ -6,7 +6,8 @@ import { BuildingStore } from './building.store';
 
 /** Listes filtrées par le bâtiment sélectionné (syndic). */
 const SCOPED = ['/admin/lots', '/admin/expenses', '/admin/budgets', '/admin/suppliers', '/announcements', '/documents', '/works',
-  '/assemblies', '/admin/charge-calls', '/admin/charges', '/admin/incidents', '/admin/dashboard'];
+  '/assemblies', '/admin/charge-calls', '/admin/charges', '/admin/incidents', '/admin/dashboard', '/admin/messages',
+  '/admin/reservations', '/admin/deadlines'];
 
 /** Accès générique à l'API (chemins relatifs à /api). */
 @Injectable({ providedIn: 'root' })
@@ -30,6 +31,22 @@ export class ApiService {
     let p = new HttpParams();
     Object.entries(params).forEach(([k, v]) => (p = p.set(k, String(v))));
     return this.http.patch<T>(`${this.base}${path}`, null, { params: p });
+  }
+  /** Requête avec un corps (ex. DELETE avec mot de passe). */
+  request<T>(method: string, path: string, body?: unknown): Observable<T> {
+    return this.http.request<T>(method, `${this.base}${path}`, { body });
+  }
+  /** Téléchargement d'un fichier protégé (le jeton est ajouté par l'intercepteur). */
+  getBlob(path: string, params?: Record<string, string | number | boolean | null | undefined>): Observable<Blob> {
+    let p = new HttpParams();
+    Object.entries(params ?? {}).forEach(([k, v]) => { if (v !== null && v !== undefined && v !== '') p = p.set(k, String(v)); });
+    return this.http.get(`${this.base}${path}`, { params: p, responseType: 'blob' });
+  }
+  /** Envoi d'un fichier (formulaire multipart, champ « file »). */
+  upload<T>(path: string, file: Blob, name: string): Observable<T> {
+    const fd = new FormData();
+    fd.append('file', file, name);
+    return this.http.post<T>(`${this.base}${path}`, fd);
   }
   delete(path: string): Observable<void> { return this.http.delete<void>(`${this.base}${path}`); }
 }
