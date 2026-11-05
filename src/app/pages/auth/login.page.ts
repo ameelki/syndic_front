@@ -5,16 +5,16 @@ import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { errorText } from '../../core/auth.interceptor';
-import { LogoComponent } from '../../shared/icons.component';
+import { BrandComponent } from '../../shared/brand.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, LogoComponent],
+  imports: [CommonModule, FormsModule, RouterLink, BrandComponent],
   template: `
     <div class="wrap">
       <form class="card box" (ngSubmit)="submit()" #f="ngForm">
-        <app-logo [size]="34" class="lg" />
+        <app-brand [size]="34" [showName]="false" class="lg" />
         <h1>Connexion</h1>
         <p class="sub">Accédez à votre espace syndic ou copropriétaire.</p>
         <div class="alert alert--error" *ngIf="error">{{ error }}</div>

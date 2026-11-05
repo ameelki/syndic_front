@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
+import { AgencyStore } from '../../core/agency.store';
 import { errorText } from '../../core/auth.interceptor';
 
 @Component({
@@ -60,10 +61,10 @@ export class RegisterPage implements OnInit {
   error = '';
   done = '';
 
-  constructor(private auth: AuthService, private api: ApiService) {}
+  constructor(private auth: AuthService, private api: ApiService, private agency: AgencyStore) {}
 
   ngOnInit(): void {
-    this.api.get<{ id: number; name: string; city: string }[]>('/auth/buildings').subscribe({ next: (b) => (this.buildings = b), error: () => {} });
+    this.api.get<{ id: number; name: string; city: string }[]>('/auth/buildings', { agency: this.agency.slug }).subscribe({ next: (b) => (this.buildings = b), error: () => {} });
   }
 
   submit(): void {

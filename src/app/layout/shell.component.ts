@@ -6,24 +6,25 @@ import { Subscription } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 import { BuildingStore } from '../core/building.store';
 import { LangSwitchComponent } from './lang-switch.component';
-import { IconComponent, LogoComponent } from '../shared/icons.component';
+import { IconComponent } from '../shared/icons.component';
+import { BrandComponent } from '../shared/brand.component';
 
 interface NavItem { label: string; link: string; icon: string; }
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, RouterOutlet, LangSwitchComponent, IconComponent, LogoComponent],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, RouterOutlet, LangSwitchComponent, IconComponent, BrandComponent],
   template: `
     <div class="shell">
       <header class="topbar">
         <button class="burger" (click)="open = !open" aria-label="Menu"><app-icon name="menu" [size]="24" /></button>
-        <strong class="brand"><app-logo [size]="22" />Syndic</strong>
+        <strong class="brand"><app-brand [size]="22" /></strong>
         <span class="who">{{ auth.user()?.firstName }} {{ auth.user()?.lastName }}</span>
       </header>
       <div class="overlay" *ngIf="open" (click)="open = false"></div>
       <aside class="side" [class.side--open]="open">
-        <div class="side__brand"><span class="mark"><app-logo [size]="26" />Syndic</span><small>{{ auth.isAdmin() ? 'Espace syndic' : 'Espace copropriétaire' }}</small></div>
+        <div class="side__brand"><span class="mark"><app-brand [size]="26" /></span><small>{{ auth.isSuper() ? 'Plateforme' : auth.isAdmin() ? 'Espace syndic' : 'Espace copropriétaire' }}</small></div>
         <div class="bsel" *ngIf="auth.isAdmin() && store.list.length">
           <label>Bâtiment</label>
           <select [ngModel]="store.selectedId" (ngModelChange)="pick($event)" name="bsel">
@@ -38,7 +39,7 @@ interface NavItem { label: string; link: string; icon: string; }
         <button class="logout" (click)="auth.logout()"><app-icon name="logout" [size]="18" />Se déconnecter</button>
       </aside>
       <main class="content"><router-outlet *ngIf="show" /></main>
-      <nav class="tabbar" *ngIf="!auth.isAdmin()">
+      <nav class="tabbar" *ngIf="auth.user()?.role === 'OWNER'">
         <a *ngFor="let t of tabs" [routerLink]="t.link" routerLinkActive="on"><app-icon [name]="t.icon" [size]="22" /><span>{{ t.label }}</span></a>
       </nav>
     </div>
@@ -47,11 +48,11 @@ interface NavItem { label: string; link: string; icon: string; }
     .shell { min-height: 100vh; }
     .topbar { display: none; position: sticky; top: 0; z-index: 60; background: var(--navy); color: #fff; align-items: center; gap: 12px; padding: 11px 14px; }
     .burger { background: none; border: 0; color: #fff; line-height: 1; padding: 2px; display: inline-flex; }
-    .brand { font-family: var(--font-display); font-size: 19px; flex: 1; display: inline-flex; align-items: center; gap: 9px; letter-spacing: -.01em; }
+    .brand { font-family: var(--font-display); font-size: 19px; flex: 1; display: inline-flex; align-items: center; min-width: 0; letter-spacing: -.01em; }
     .who { font-size: 13px; opacity: .8; }
     .side { position: fixed; top: 0; bottom: 0; left: 0; width: 252px; background: var(--navy); color: #c3ced3; display: flex; flex-direction: column; padding: 22px 12px; z-index: 80; overflow-y: auto; }
     .side__brand { color: #fff; padding: 0 10px 22px; display: flex; flex-direction: column; gap: 4px; }
-    .mark { font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -.02em; display: inline-flex; align-items: center; gap: 10px; }
+    .mark { font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -.02em; display: inline-flex; align-items: center; min-width: 0; }
     .side__brand small { font-size: 13px; color: #8fa0a8; padding-left: 36px; }
     nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
     nav a { color: #c3ced3; padding: 9px 12px; border-radius: 8px; display: flex; gap: 12px; align-items: center; font-weight: 500; font-size: 14px; position: relative; text-decoration: none; }
@@ -115,6 +116,9 @@ export class ShellComponent implements OnDestroy {
       { label: 'Réservations', link: '/app/reservations', icon: 'calendar' },
       { label: 'Messagerie', link: '/app/messages', icon: 'mail' },
     ];
+    if (this.auth.isSuper()) {
+      return [{ label: 'Agences', link: '/app/super/agencies', icon: 'building' }];
+    }
     if (this.auth.isAdmin()) {
       return [
         { label: 'Tableau de bord', link: '/app/admin/dashboard', icon: 'chart' },
@@ -127,6 +131,7 @@ export class ShellComponent implements OnDestroy {
         { label: 'Budget', link: '/app/admin/budgets', icon: 'trend' },
         { label: 'Fournisseurs', link: '/app/admin/suppliers', icon: 'wrench' },
         ...common,
+        { label: 'Mon agence', link: '/app/admin/agency', icon: 'palette' },
       ];
     }
     return [

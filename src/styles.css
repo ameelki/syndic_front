@@ -18,7 +18,7 @@ img, svg { max-width: 100%; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border-radius: 8px; border: 1.5px solid transparent;
   font-weight: 600; font-size: 14px; background: var(--navy); color: #fff; transition: background .15s, border-color .15s, transform .1s; text-decoration: none; }
 .btn:hover { background: var(--navy-dark); text-decoration: none; } .btn:active { transform: translateY(1px); } .btn:disabled { opacity: .5; cursor: not-allowed; }
-.btn--gold { background: var(--gold); color: #1f2b33; } .btn--gold:hover { background: #dba01e; }
+.btn--gold { background: var(--gold); color: var(--on-gold, #1f2b33); } .btn--gold:hover { background: var(--gold); filter: brightness(.93); }
 .btn--ghost { background: transparent; color: var(--navy); border-color: #c9d1d4; } .btn--ghost:hover { background: #e9eeee; }
 .btn--ok { background: var(--ok); } .btn--ok:hover { background: #226239; }
 .btn--danger { background: #fff; color: var(--danger); border-color: #ebc7c1; } .btn--danger:hover { background: #fbeeec; }

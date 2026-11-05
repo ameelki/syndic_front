@@ -9,7 +9,7 @@ const SKIP = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'CODE', 'TITLE']);
  * Ne fait rien en français.
  */
 export function startDomTranslation(i18n: I18n): void {
-  document.documentElement.lang = i18n.lang === 'lb' ? 'lb' : i18n.lang === 'pt' ? 'pt-PT' : 'fr';
+  document.documentElement.lang = ({ lb: 'lb', pt: 'pt-PT', de: 'de-LU', fr: 'fr' } as Record<string, string>)[i18n.lang];
   if (i18n.lang === 'fr') return;
 
   // confirm() : messages traduits aussi

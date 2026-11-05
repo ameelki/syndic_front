@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../../shared/icons.component';
+import { AgencyStore } from '../../core/agency.store';
 
 @Component({
   selector: 'app-home',
@@ -12,7 +13,8 @@ import { IconComponent } from '../../shared/icons.component';
       <div class="hero__in">
         <div class="hero__txt">
           <h1>Votre copropriété, enfin simple et transparente.</h1>
-          <p>Appels de fonds, dépenses, incidents, assemblées générales et votes en ligne : le syndic et les copropriétaires partagent les mêmes informations, en temps réel.</p>
+          <p *ngIf="agency.agency().tagline as tagline; else lead">{{ tagline }}</p>
+          <ng-template #lead><p>Appels de fonds, dépenses, incidents, assemblées générales et votes en ligne : le syndic et les copropriétaires partagent les mêmes informations, en temps réel.</p></ng-template>
           <div class="cta">
             <a routerLink="/inscription" class="btn btn--gold">Je suis copropriétaire — créer mon compte</a>
             <a routerLink="/connexion" class="btn btn--ghost light">Se connecter</a>
@@ -64,6 +66,8 @@ import { IconComponent } from '../../shared/icons.component';
   `],
 })
 export class HomePage {
+  constructor(public agency: AgencyStore) {}
+
   /** Façade : -1 = fenêtre éteinte, sinon rang d'allumage. */
   windows = [-1, 2, -1, -1, -1, -1, -1, 4, -1, 0, -1, -1, -1, 3, -1, 1, -1, -1, -1, -1, -1, -1, 5, -1, -1];
   features = [
